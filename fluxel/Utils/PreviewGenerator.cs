@@ -28,7 +28,7 @@ public static class PreviewGenerator
             StartInfo = new ProcessStartInfo
             {
                 FileName = ServerHost.Configuration.FfmpegPath,
-                Arguments = $"-y -i \"{path}\" -ss {start.ToString(CultureInfo.InvariantCulture)} -t {preview_length} \"{temp}\"",
+                Arguments = $"-y -i \"{path}\" -ss {start.ToString(CultureInfo.InvariantCulture)} -t {preview_length} -map 0:a \"{temp}\"",
                 CreateNoWindow = true,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
