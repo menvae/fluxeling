@@ -15,6 +15,11 @@ internal static class Program
             FfmpegPath = Env.GetString("FFMPEG_PATH"),
             KoFiSecret = Env.GetString("KOFI_SECRET"),
             BundledSets = envLongList("BUNDLES_SETS").ToArray(),
+            Limits = new ServerConfig.LimitsConfig
+            {
+                MaxMapSets = Env.GetInt("LIMITS_MAX_MAPSETS"),
+                IncreasePerPure = Env.GetInt("LIMITS_INCREASE_PER_PURE")
+            },
             Mongo = new ServerConfig.MongoConfig
             {
                 Connection = Env.GetString("MONGO_CONN"),

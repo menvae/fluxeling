@@ -9,6 +9,7 @@ public partial class ServerConfig
     public string KoFiSecret { get; init; } = string.Empty;
     public long[] BundledSets { get; init; } = Array.Empty<long>();
 
+    public LimitsConfig Limits { get; init; } = new();
     public MongoConfig Mongo { get; init; } = new();
     public SteamConfig Steam { get; init; } = new();
     public UrlConfig Urls { get; init; } = new();
