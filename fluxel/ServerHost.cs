@@ -14,6 +14,7 @@ using fluxel.Database.Helpers;
 using fluxel.Models;
 using fluxel.Modules;
 using fluxel.Tasks;
+using fluxel.Tasks.Maps;
 using fluXis.Map;
 using Midori.API;
 using Midori.Logging;
@@ -62,6 +63,7 @@ public class ServerHost
         Server.RegisterAPI<FluxelAPIInteraction, IFluxelAPIRoute>(typeof(ServerHost).Assembly);
 
         loadModules();
+        Scheduler.Schedule(new RefreshMapScoresTask());
 
         Server.Start(IPAddress.Loopback, config.Port);
         Scheduler.Start();

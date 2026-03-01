@@ -15,6 +15,7 @@ public static class MapHelper
     private static IMongoCollection<MapRateVote> votes => MongoDatabase.GetCollection<MapRateVote>("rate-votes");
 
     public static List<Map> All => maps.Find(m => true).ToList();
+    public static List<Map> NeedRefresh => maps.Find(m => m.NeedsScoreRefresh).ToList();
     public static long PureCount => MapSetHelper.AllPure.Sum(x => x.Maps.Count());
 
     public static void Add(Map map)
