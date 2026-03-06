@@ -172,7 +172,7 @@ public class MultiplayerSocket : AuthenticatedSocket<IMultiplayerServer, IMultip
         player.RequestingSkip = !unskip;
 
         int playersSkipping = Room.Participants.Count(p => p.RequestingSkip);
-        bool canSkip = ((float)playersSkipping / (float)Room.Participants.Count) > 0.75f;
+        bool canSkip = ((float)playersSkipping / (float)Room.Participants.Count(p => p.State == MultiplayerUserState.Playing)) > 0.75f;
 
         return All.ForEachAsync(c => c.Client.VoteSkipUpdated(playersSkipping, canSkip));
     }
