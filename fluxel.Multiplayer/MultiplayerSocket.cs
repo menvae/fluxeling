@@ -160,10 +160,7 @@ public class MultiplayerSocket : AuthenticatedSocket<IMultiplayerServer, IMultip
 
     public Task VoteSkip(bool unskip = false)
     {
-        if (Room is null)
-            throw RoomException.NotInRoom();
-
-        var player = Room.GetPlayer(UserID);
+        var player = Room?.GetPlayer(UserID);
 
         // vote skips are not important enough to throw
         if (player == null)
@@ -171,10 +168,12 @@ public class MultiplayerSocket : AuthenticatedSocket<IMultiplayerServer, IMultip
 
         player.RequestingSkip = !unskip;
 
-        int playersSkipping = Room.Participants.Count(p => p.RequestingSkip);
-        bool canSkip = (playersSkipping / (float)Room.Participants.Count(p => p.State == MultiplayerUserState.Playing)) >= MultiplayerRoom.MIN_VOTE_SKIP_MAJORITY;
+        var playersRequestingSkip = Room?.Participants.Where(p => p.RequestingSkip).Select(p => p.ID).ToArray();
+        int playersPlaying = Room?.Participants.Count(p => p.State == MultiplayerUserState.Playing) ?? 1;
 
-        return All.ForEachAsync(c => c.Client.VoteSkipUpdated(playersSkipping, canSkip));
+        bool canSkip = ((playersRequestingSkip?.Length ?? 1) / (float)playersPlaying) >= MultiplayerRoom.MIN_VOTE_SKIP_MAJORITY;
+
+        return All.ForEachAsync(c => c.Client.VoteSkipUpdated(playersRequestingSkip, canSkip));
     }
 
     public async Task FinishPlay(ScoreInfo score)
@@ -241,6 +240,7 @@ public class MultiplayerSocket : AuthenticatedSocket<IMultiplayerServer, IMultip
         {
             setPlayerStatus(user.ID, MultiplayerUserState.Results);
             user.Score = null;
+            user.RequestingSkip = false;
         }
     }
 

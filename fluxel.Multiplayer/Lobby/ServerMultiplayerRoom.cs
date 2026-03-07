@@ -143,7 +143,8 @@ public class ServerMultiplayerRoom
         public MultiplayerParticipant ToAPI() => new()
         {
             Player = UserHelper.Get(ID)?.ToAPI() ?? APIUser.CreateUnknown(ID),
-            State = State
+            State = State,
+            RequestingSkip = RequestingSkip
         };
     }
 }
