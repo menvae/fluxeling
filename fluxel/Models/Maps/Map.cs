@@ -90,6 +90,9 @@ public class Map : IHasCache
     [BsonElement("votes")]
     public Dictionary<string, int>? Votes { get; set; } = new();
 
+    [BsonElement("needs-score-refresh")]
+    public bool NeedsScoreRefresh { get; set; } = true;
+
     [BsonIgnore]
     public int MaxCombo => Hits + LongNotes * 2;
 
@@ -119,6 +122,8 @@ public class Map : IHasCache
 
     public double RecalculateRating()
     {
+        var r = Rating;
+
         var votes = MapHelper.GetVotesByMap(ID);
 
         if (votes.Count == 0)
@@ -144,7 +149,12 @@ public class Map : IHasCache
 
         var baseRate = baseTotal / count;
         var effectRate = (readTotal + trackTotal + perceptTotal) / 3 / count;
-        return Rating = baseRate + effectRate * 2;
+        Rating = baseRate + effectRate * 2;
+
+        if (Math.Abs(r - Rating) > 0.001f)
+            NeedsScoreRefresh = true;
+
+        return Rating;
     }
 }
 

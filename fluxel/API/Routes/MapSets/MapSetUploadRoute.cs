@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -30,6 +31,12 @@ public class MapSetUploadRoute : IFluxelAPIRoute, INeedsAuthorization
         if (interaction.User.HasFlag(UserBanFlag.UploadBan))
         {
             await interaction.ReplyMessage(HttpStatusCode.Forbidden, "You are banned from uploading mapsets.");
+            return;
+        }
+
+        if (!checkLimit(interaction))
+        {
+            await interaction.ReplyMessage(HttpStatusCode.Forbidden, "You have reached your upload limit.");
             return;
         }
 
@@ -166,5 +173,13 @@ public class MapSetUploadRoute : IFluxelAPIRoute, INeedsAuthorization
         Events.UploadMap(set.ID);
         maps.ForEach(m => ServerHost.Instance.Scheduler.Schedule(new RecalculateMapTask(m.ID)));
         ServerHost.Instance.Scheduler.Schedule(new GeneratePreviewTask(set.ID));
+    }
+
+    private bool checkLimit(FluxelAPIInteraction interaction)
+    {
+        var current = MapSetHelper.GetUploadedCount(interaction.UserID, new DateTimeOffset(new DateTime(2026, 1, 1)));
+        var maximum = MapSetHelper.GetUploadLimit(interaction.UserID);
+
+        return current < maximum;
     }
 }

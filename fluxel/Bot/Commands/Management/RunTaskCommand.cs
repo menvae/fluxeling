@@ -8,6 +8,7 @@ using fluxel.Bot.Components;
 using fluxel.Bot.Utils;
 using fluxel.Tasks;
 using fluXis.Utils;
+using Midori.Logging;
 
 namespace fluxel.Bot.Commands.Management;
 
@@ -27,25 +28,29 @@ public class RunTaskCommand : ISlashCommand
         await interaction.AcknowledgeEphemeral();
 
         var name = interaction.GetString("name")!;
-        var strArgs = interaction.GetString("args")!;
+        var strArgs = interaction.GetString("args") ?? "";
         var argSplit = strArgs.Split(":");
 
         var tasks = Assembly.GetExecutingAssembly()
                             .GetTypes().Where(t => t.GetInterfaces().Contains(typeof(IBasicTask)));
 
-        var task = tasks.FirstOrDefault(t => t.Name.EqualsLower(name));
+        var taskType = tasks.FirstOrDefault(t => t.Name.EqualsLower(name));
 
-        if (task == null)
+        if (taskType == null)
         {
-            interaction.Reply("No task with this name found.", true);
+            interaction.Followup("No task with this name found.", true);
             return;
         }
 
-        var constructor = task.GetConstructors()[0];
+        var constructor = taskType.GetConstructors()[0];
         var parameters = new List<object>();
+
+        Logger.Log($"got ctor");
 
         foreach (var param in constructor.GetParameters())
         {
+            Logger.Log(param.ParameterType.Name);
+
             switch (param.ParameterType.Name)
             {
                 case "Int64":
@@ -54,6 +59,17 @@ public class RunTaskCommand : ISlashCommand
             }
         }
 
-        Activator.CreateInstance(task, constructor, parameters.ToArray());
+        try
+        {
+            var task = Activator.CreateInstance(taskType, parameters.ToArray());
+            Logger.Log("created instance");
+            ServerHost.Instance.Scheduler.Schedule((task as IBasicTask)!);
+            Logger.Log("scheduled");
+            interaction.Followup("done");
+        }
+        catch (Exception ex)
+        {
+            interaction.Followup(ex.Message, true);
+        }
     }
 }

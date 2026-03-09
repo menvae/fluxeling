@@ -13,10 +13,33 @@ public static class ChatHelper
 
     private static IMongoCollection<ChatMessage> messages => MongoDatabase.GetCollection<ChatMessage>("chat_messages");
 
-    public static void Add(ChatMessage message) => messages.InsertOne(message);
+    public static ChatMessage Add(long uid, string content, string channel, ulong? discord = null)
+    {
+        var message = new ChatMessage
+        {
+            SenderID = uid,
+            Content = content,
+            Channel = channel,
+            DiscordID = discord
+        };
+
+        messages.InsertOne(message);
+        return message;
+    }
 
     public static ChatMessage? Get(string channel, string id) => Guid.TryParse(id, out var g) ? Get(channel, g) : null;
     public static ChatMessage? Get(string channel, Guid id) => messages.Find(x => x.Channel == channel && x.ID == id).FirstOrDefault();
+    public static ChatMessage? Get(Guid id) => messages.Find(x => x.ID == id).FirstOrDefault();
+    public static ChatMessage? GetByDiscordID(ulong id) => messages.Find(x => x.DiscordID == id).FirstOrDefault();
+
+    public static void AttachDiscordID(Guid msg, ulong id)
+    {
+        var message = messages.Find(x => x.ID == msg).FirstOrDefault();
+        if (message is null) return;
+
+        message.DiscordID = id;
+        messages.ReplaceOne(x => x.ID == msg, message);
+    }
 
     public static void Delete(ChatMessage message)
     {
@@ -39,6 +62,29 @@ public static class ChatHelper
         Users = ids ?? new List<long>()
     });
 
+    public static ChatChannel CreateDirectChannel(string name, long one, long two)
+    {
+        var chan = new ChatChannel(name, APIChannelType.Private)
+        {
+            Target1 = one,
+            Target2 = two
+        };
+
+        channels.InsertOne(chan);
+        return chan;
+    }
+
+    public static ChatChannel CreateClubChannel(string name, long club)
+    {
+        var chan = new ChatChannel(name, APIChannelType.Club)
+        {
+            Club = club
+        };
+
+        channels.InsertOne(chan);
+        return chan;
+    }
+
     public static ChatChannel? GetChannel(string name) => channels.Find(x => x.Name.ToLowerInvariant() == name.ToLowerInvariant()).FirstOrDefault();
 
     public static IEnumerable<ChatChannel> WithMember(long id) => channels.Find(x => x.Users.Contains(id)).ToList();
@@ -51,7 +97,7 @@ public static class ChatHelper
             return false;
 
         chan.Users.Add(id);
-        update(chan);
+        Update(chan);
         return true;
     }
 
@@ -63,11 +109,11 @@ public static class ChatHelper
             return false;
 
         chan.Users.Remove(id);
-        update(chan);
+        Update(chan);
         return true;
     }
 
-    private static void update(ChatChannel channel)
+    public static void Update(ChatChannel channel)
         => channels.ReplaceOne(x => x.Name == channel.Name, channel);
 
     #endregion

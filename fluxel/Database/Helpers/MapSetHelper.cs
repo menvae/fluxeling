@@ -43,6 +43,18 @@ public static class MapSetHelper
         MapHelper.DeleteBySet(id);
     }
 
+    public static long GetUploadLimit(long uid)
+    {
+        var count = ServerHost.Configuration.Limits.MaxMapSets;
+        var inc = ServerHost.Configuration.Limits.IncreasePerPure;
+
+        var pure = sets.CountDocuments(x => x.CreatorID == uid && x.Status >= MapStatus.Pure);
+        return count + inc * pure;
+    }
+
+    public static long GetUploadedCount(long uid, DateTimeOffset? after = null)
+        => sets.CountDocuments(x => x.CreatorID == uid && x.Submitted >= (after ?? DateTimeOffset.MinValue));
+
     #region Modding
 
     private static IMongoCollection<ModdingAction> actions => MongoDatabase.GetCollection<ModdingAction>("modding-actions");

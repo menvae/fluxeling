@@ -2,11 +2,11 @@
 using fluxel.Constants;
 using fluxel.Database.Extensions;
 using fluxel.Database.Helpers;
+using fluxel.Modules.Messages.Chat;
 using Midori.API.Components.Interfaces;
 using Midori.Networking;
-using osu.Framework.Extensions.IEnumerableExtensions;
 
-namespace fluxel.Social.API.Chat.Channels;
+namespace fluxel.Social.API.Chat.Messages;
 
 public class DeleteChatMessageRoute : IFluxelAPIRoute, INeedsAuthorization
 {
@@ -42,7 +42,7 @@ public class DeleteChatMessageRoute : IFluxelAPIRoute, INeedsAuthorization
         }
 
         ChatHelper.Delete(message);
-        NotificationsModule.Sockets.ForEach(c => c.Client.DeleteChatMessage(channel, id));
-        await interaction.ReplyMessage(HttpStatusCode.OK,"Deleted.");
+        ServerHost.Instance.SendMessage(new ChatMessageDeleteMessage(message.ID));
+        await interaction.ReplyMessage(HttpStatusCode.OK, "Deleted.");
     }
 }

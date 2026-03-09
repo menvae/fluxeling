@@ -14,6 +14,7 @@ using fluxel.Database.Helpers;
 using fluxel.Models;
 using fluxel.Modules;
 using fluxel.Tasks;
+using fluxel.Tasks.Maps;
 using fluXis.Map;
 using Midori.API;
 using Midori.Logging;
@@ -47,8 +48,8 @@ public class ServerHost
     {
         osu.Framework.Logging.Logger.Enabled = false;
 
-        MapInfo.MinKeymode = 4;
-        MapInfo.MaxKeymode = 8;
+        MapInfo.MinKeymode = 1;
+        MapInfo.MaxKeymode = 10;
 
         setupErrorLogging();
         setupDatabase();
@@ -62,6 +63,7 @@ public class ServerHost
         Server.RegisterAPI<FluxelAPIInteraction, IFluxelAPIRoute>(typeof(ServerHost).Assembly);
 
         loadModules();
+        Scheduler.Schedule(new RefreshMapScoresTask());
 
         Server.Start(IPAddress.Loopback, config.Port);
         Scheduler.Start();
@@ -209,19 +211,17 @@ public class ServerHost
         }
     }
 
-    public void SendMessage(object data)
+    public void SendMessage(object data) => modules.ForEach(x =>
     {
-        modules.ForEach(x =>
+        try
         {
-            try
-            {
-                x.OnMessage(data);
-            }
-            catch (Exception ex)
-            {
-            }
-        });
-    }
+            x.OnMessage(data);
+        }
+        catch (Exception ex)
+        {
+            Logger.Error(ex, $"Module '{x.GetType().Name}' failed to handle '{data.GetType().Name}'.");
+        }
+    });
 
     #endregion
 }
